@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Avatar from '../ui/Avatar'
-import { X, Phone, Video, FileText, Link2, Image } from 'lucide-react'
+import { X, Phone, Video } from 'lucide-react'
 import type { User } from '../../types'
 import clsx from 'clsx'
 
