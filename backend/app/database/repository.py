@@ -593,6 +593,49 @@ def create_message(data: dict) -> dict:
         return result.data[0] if result.data else data
 
 
+def get_message(message_id: str) -> dict | None:
+    if _use_sqlite():
+        from app.database.models import Message
+        db = _get_session()
+        try:
+            m = db.query(Message).filter(Message.id == message_id).first()
+            return _msg_to_dict(m) if m else None
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        result = sb.table("messages").select("*").eq("id", message_id).execute()
+        return result.data[0] if result.data else None
+
+
+def update_message(message_id: str, content: str) -> None:
+    if _use_sqlite():
+        from app.database.models import Message
+        db = _get_session()
+        try:
+            db.query(Message).filter(Message.id == message_id).update({"content": content})
+            db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        sb.table("messages").update({"content": content}).eq("id", message_id).execute()
+
+
+def delete_message(message_id: str) -> None:
+    if _use_sqlite():
+        from app.database.models import Message
+        db = _get_session()
+        try:
+            db.query(Message).filter(Message.id == message_id).delete()
+            db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        sb.table("messages").delete().eq("id", message_id).execute()
+
+
 def mark_messages_read(chat_id: str, exclude_sender_id: str) -> None:
     if _use_sqlite():
         from app.database.models import Message

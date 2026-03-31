@@ -1,8 +1,14 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from pydantic import BaseModel
 from app.schemas.message import MessageCreate
 from app.security.dependencies import get_current_user
 from app.services import message_service
 from app.services import storage_service
+from app.database import repository as db
+
+
+class MessageEdit(BaseModel):
+    content: str
 
 router = APIRouter()
 
@@ -61,3 +67,25 @@ async def upload_file(
         chat_id, current_user["id"], content, msg_type
     )
     return msg
+
+
+@router.put("/{message_id}")
+async def edit_message(message_id: str, req: MessageEdit, current_user: dict = Depends(get_current_user)):
+    msg = db.get_message(message_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg["sender_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Can only edit your own messages")
+    db.update_message(message_id, req.content)
+    return {**msg, "content": req.content}
+
+
+@router.delete("/{message_id}")
+async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    msg = db.get_message(message_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg["sender_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Can only delete your own messages")
+    db.delete_message(message_id)
+    return {"status": "ok"}
