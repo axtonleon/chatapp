@@ -23,6 +23,7 @@ async def get_user_chats(user_id: str) -> list:
 
         last_message = db.get_last_message(chat_id)
         unread_count = db.get_unread_count(chat_id, user_id)
+        settings = db.get_chat_participant_settings(chat_id, user_id)
 
         chats.append({
             "id": chat_data["id"],
@@ -31,6 +32,8 @@ async def get_user_chats(user_id: str) -> list:
             "participants": participants,
             "last_message": last_message,
             "unread_count": unread_count,
+            "is_archived": settings["is_archived"],
+            "is_muted": settings["is_muted"],
         })
 
     chats.sort(

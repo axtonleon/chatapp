@@ -420,6 +420,109 @@ def delete_chat(chat_id: str) -> None:
         sb.table("chats").delete().eq("id", chat_id).execute()
 
 
+def get_chat_participant_settings(chat_id: str, user_id: str) -> dict:
+    """Get per-user settings (is_archived, is_muted) for a chat."""
+    if _use_sqlite():
+        from app.database.models import ChatParticipant
+        db = _get_session()
+        try:
+            cp = db.query(ChatParticipant).filter(
+                ChatParticipant.chat_id == chat_id,
+                ChatParticipant.user_id == user_id,
+            ).first()
+            if cp:
+                return {"is_archived": bool(cp.is_archived), "is_muted": bool(cp.is_muted)}
+            return {"is_archived": False, "is_muted": False}
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        result = sb.table("chat_participants").select("is_archived, is_muted").eq(
+            "chat_id", chat_id
+        ).eq("user_id", user_id).execute()
+        if result.data:
+            return {"is_archived": bool(result.data[0].get("is_archived")), "is_muted": bool(result.data[0].get("is_muted"))}
+        return {"is_archived": False, "is_muted": False}
+
+
+def archive_chat(chat_id: str, user_id: str, archived: bool) -> None:
+    if _use_sqlite():
+        from app.database.models import ChatParticipant
+        db = _get_session()
+        try:
+            db.query(ChatParticipant).filter(
+                ChatParticipant.chat_id == chat_id,
+                ChatParticipant.user_id == user_id,
+            ).update({"is_archived": archived})
+            db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        sb.table("chat_participants").update({"is_archived": archived}).eq(
+            "chat_id", chat_id
+        ).eq("user_id", user_id).execute()
+
+
+def mute_chat(chat_id: str, user_id: str, muted: bool) -> None:
+    if _use_sqlite():
+        from app.database.models import ChatParticipant
+        db = _get_session()
+        try:
+            db.query(ChatParticipant).filter(
+                ChatParticipant.chat_id == chat_id,
+                ChatParticipant.user_id == user_id,
+            ).update({"is_muted": muted})
+            db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        sb.table("chat_participants").update({"is_muted": muted}).eq(
+            "chat_id", chat_id
+        ).eq("user_id", user_id).execute()
+
+
+def clear_chat_messages(chat_id: str) -> None:
+    if _use_sqlite():
+        from app.database.models import Message
+        db = _get_session()
+        try:
+            db.query(Message).filter(Message.chat_id == chat_id).delete()
+            db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        sb.table("messages").delete().eq("chat_id", chat_id).execute()
+
+
+def mark_chat_unread(chat_id: str, user_id: str) -> None:
+    """Mark the last message in the chat as unread for the user."""
+    if _use_sqlite():
+        from app.database.models import Message
+        db = _get_session()
+        try:
+            last = (
+                db.query(Message)
+                .filter(Message.chat_id == chat_id, Message.sender_id != user_id)
+                .order_by(Message.created_at.desc())
+                .first()
+            )
+            if last:
+                last.is_read = False
+                db.commit()
+        finally:
+            db.close()
+    else:
+        sb = _get_supabase()
+        result = sb.table("messages").select("id").eq("chat_id", chat_id).neq(
+            "sender_id", user_id
+        ).order("created_at", desc=True).limit(1).execute()
+        if result.data:
+            sb.table("messages").update({"is_read": False}).eq("id", result.data[0]["id"]).execute()
+
+
 # ---------------------------------------------------------------------------
 # Messages
 # ---------------------------------------------------------------------------

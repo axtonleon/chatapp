@@ -35,6 +35,8 @@ class ChatParticipant(Base):
     chat_id = Column(String, ForeignKey("chats.id", ondelete="CASCADE"))
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
     joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    is_archived = Column(Boolean, default=False)
+    is_muted = Column(Boolean, default=False)
 
     chat = relationship("Chat", back_populates="participants")
 
