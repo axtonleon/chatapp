@@ -60,6 +60,21 @@ def _get_supabase():
     return supabase
 
 
+import time as _time
+
+def _retry_supabase(fn, retries=3):
+    """Retry a Supabase operation on transient connection errors."""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except Exception as e:
+            err = str(e).lower()
+            if attempt < retries - 1 and ("protocol" in err or "connect" in err or "getaddrinfo" in err):
+                _time.sleep(0.5 * (attempt + 1))
+                continue
+            raise
+
+
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
@@ -89,9 +104,11 @@ def find_user_by_id(user_id: str) -> dict | None:
         finally:
             db.close()
     else:
-        sb = _get_supabase()
-        result = sb.table("users").select("*").eq("id", user_id).execute()
-        return result.data[0] if result.data else None
+        def _do():
+            sb = _get_supabase()
+            result = sb.table("users").select("*").eq("id", user_id).execute()
+            return result.data[0] if result.data else None
+        return _retry_supabase(_do)
 
 
 def get_user_public(user_id: str) -> dict | None:
@@ -152,15 +169,16 @@ def update_user(user_id: str, data: dict) -> None:
         finally:
             db.close()
     else:
-        # Supabase needs ISO strings, not datetime objects
         serialized = {}
         for k, v in data.items():
             if isinstance(v, datetime):
                 serialized[k] = v.isoformat()
             else:
                 serialized[k] = v
-        sb = _get_supabase()
-        sb.table("users").update(serialized).eq("id", user_id).execute()
+        def _do():
+            sb = _get_supabase()
+            sb.table("users").update(serialized).eq("id", user_id).execute()
+        _retry_supabase(_do)
 
 
 def get_all_users(exclude_id: str) -> list[dict]:
