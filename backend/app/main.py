@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,6 +33,11 @@ def on_startup():
     if DATABASE_MODE == "sqlite":
         from app.database.session import init_db
         init_db()
+        # Serve uploaded files locally
+        uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+        print(f"Serving uploads from: {uploads_dir}")
         print("SQLite database initialized")
     else:
         print("Using Supabase database")
