@@ -110,6 +110,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                             "reader_id": user_id,
                         })
 
+            # WebRTC signaling
+            elif message["type"] in ("call_offer", "call_answer", "ice_candidate", "call_end", "call_reject"):
+                target_id = message.get("target_id")
+                if target_id:
+                    await manager.send_personal(target_id, {
+                        **message,
+                        "from_id": user_id,
+                    })
+
     except WebSocketDisconnect:
         await manager.disconnect(user_id)
     except Exception:
