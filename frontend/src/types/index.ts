@@ -29,4 +29,6 @@ export interface Chat {
   participants: User[]
   last_message?: Message
   unread_count: number
+  is_archived?: boolean
+  is_muted?: boolean
 }

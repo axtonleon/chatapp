@@ -4,10 +4,9 @@ import Avatar from '../ui/Avatar'
 import {
   Home,
   MessageCircle,
-  Link2,
+  Compass,
   FolderOpen,
-  Bookmark,
-  Settings,
+  Image,
   LogOut,
   Sparkles,
   ArrowLeft,
@@ -31,9 +30,9 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
   const navItems = [
     { id: 'home', icon: Home },
     { id: 'messages', icon: MessageCircle },
-    { id: 'links', icon: Link2 },
+    { id: 'links', icon: Compass },
     { id: 'files', icon: FolderOpen },
-    { id: 'bookmarks', icon: Bookmark },
+    { id: 'gallery', icon: Image },
   ]
 
   const handleAiChat = async () => {
@@ -50,99 +49,76 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
   }
 
   return (
-    <div className="w-[68px] bg-white border-r border-chat-border flex flex-col items-center py-4 justify-between">
-      {/* Logo */}
-      <div>
+    <div className="w-[76px] flex flex-col items-center px-4 py-6 justify-between shrink-0">
+      {/* Top: logo + nav icons */}
+      <div className="flex flex-col items-center gap-8 w-[44px]">
+        {/* Logo */}
         <div
-          className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center mb-8 cursor-pointer"
+          className="w-[44px] h-[44px] bg-primary-500 rounded-full flex items-center justify-center cursor-pointer"
           onClick={() => setShowMenu(!showMenu)}
         >
-          <MessageCircle className="w-5 h-5 text-white" />
+          <PenLine className="w-[22px] h-[22px] text-white" />
         </div>
 
         {/* Nav items */}
-        <nav className="flex flex-col items-center gap-1">
+        <nav className="flex flex-col items-center gap-2 w-[44px]">
           {navItems.map(({ id, icon: Icon }) => (
-            <div key={id} className="relative flex items-center">
-              {/* Active left border indicator */}
-              <div
-                className={clsx(
-                  'absolute -left-[14px] w-[3px] h-6 rounded-r-full transition-colors',
-                  activeTab === id ? 'bg-primary-500' : 'bg-transparent',
-                )}
-              />
-              <button
-                onClick={() => onTabChange(id)}
-                className={clsx(
-                  'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
-                  activeTab === id
-                    ? 'bg-primary-50 text-primary-500'
-                    : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600',
-                )}
-              >
-                <Icon className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              key={id}
+              onClick={() => onTabChange(id)}
+              className={clsx(
+                'w-[44px] h-[44px] rounded-lg flex items-center justify-center transition-all',
+                activeTab === id
+                  ? 'bg-[#F0FDF4] border border-[#1E9A80]'
+                  : 'hover:bg-gray-50',
+              )}
+            >
+              <Icon className="w-5 h-5 text-[#151515]" />
+            </button>
           ))}
-          {/* AI Chat button */}
-          <button
-            onClick={handleAiChat}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:bg-purple-50 hover:text-purple-500 transition-colors"
-            title="Chat with AI"
-          >
-            <Sparkles className="w-5 h-5" />
-          </button>
         </nav>
       </div>
 
-      {/* Bottom section */}
-      <div className="flex flex-col items-center gap-3 relative">
+      {/* Bottom: star + avatar */}
+      <div className="flex flex-col items-center gap-6 w-[44px] relative">
         <button
-          onClick={() => onTabChange('settings')}
-          className={clsx(
-            'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
-            activeTab === 'settings'
-              ? 'bg-primary-50 text-primary-500'
-              : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600',
-          )}
+          onClick={handleAiChat}
+          className="w-[44px] h-[44px] rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+          title="Chat with AI"
         >
-          <Settings className="w-5 h-5" />
+          <Sparkles className="w-5 h-5 text-[#151515]" />
         </button>
 
         <div className="relative">
           <button onClick={() => setShowMenu(!showMenu)}>
-            <Avatar
-              src={user?.avatar_url}
-              name={user?.full_name || 'User'}
-              size="md"
-              isOnline={true}
-            />
+            <div className="w-[44px] h-[44px] rounded-full overflow-hidden">
+              <Avatar
+                src={user?.avatar_url}
+                name={user?.full_name || 'User'}
+                size="md"
+                isOnline={false}
+                className="!w-[44px] !h-[44px]"
+              />
+            </div>
           </button>
 
           {showMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
               <div className="absolute bottom-full left-full ml-2 mb-2 bg-white rounded-xl shadow-xl border border-chat-border py-2 w-[260px] z-50">
-                {/* Go back to dashboard */}
                 <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
                   <ArrowLeft className="w-4 h-4 text-gray-400" />
                   Go back to dashboard
                 </button>
-
-                {/* Rename file */}
                 <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100">
                   <PenLine className="w-4 h-4 text-gray-400" />
                   Rename file
                 </button>
-
-                {/* User info & credits */}
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="font-semibold text-sm text-gray-900 truncate">
                     {user?.full_name || 'User'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-
-                  {/* Credits section */}
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                       <span>Credits</span>
@@ -161,8 +137,6 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
                     </div>
                   </div>
                 </div>
-
-                {/* Menu items */}
                 <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
                   <Gift className="w-4 h-4 text-gray-400" />
                   Win free credits
@@ -171,8 +145,6 @@ export default function Sidebar({ activeTab, onTabChange }: Props) {
                   <Palette className="w-4 h-4 text-gray-400" />
                   Theme Style
                 </button>
-
-                {/* Logout */}
                 <button
                   onClick={() => {
                     setShowMenu(false)
