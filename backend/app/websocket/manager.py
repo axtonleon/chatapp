@@ -114,10 +114,13 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             elif message["type"] in ("call_offer", "call_answer", "ice_candidate", "call_end", "call_reject"):
                 target_id = message.get("target_id")
                 if target_id:
-                    await manager.send_personal(target_id, {
-                        **message,
-                        "from_id": user_id,
-                    })
+                    # Forward the message, adding sender info
+                    forwarded = {**message, "from_id": user_id}
+                    # Include caller name from user DB if not provided
+                    if message["type"] == "call_offer" and "from_name" not in forwarded:
+                        sender = db.get_user_sender_info(user_id)
+                        forwarded["from_name"] = sender["full_name"] if sender else "User"
+                    await manager.send_personal(target_id, forwarded)
 
     except WebSocketDisconnect:
         await manager.disconnect(user_id)
